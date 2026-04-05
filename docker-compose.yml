@@ -1,0 +1,67 @@
+networks:
+  monitoring-net:
+    name: monitoring-net
+
+services:
+  jaeger:
+    image: jaegertracing/jaeger:2.4.0
+    restart: unless-stopped
+    command: ["--config=/etc/jaeger/config.yaml"]
+    ports:
+      - "127.0.0.1:16686:16686"
+    volumes:
+      - ./jaeger.yaml:/etc/jaeger/config.yaml:ro
+    networks:
+      - monitoring-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${MONITORING_DATA_DIR}/prometheus-targets:/etc/prometheus/targets:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - monitoring-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    restart: unless-stopped
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${MONITORING_DATA_DIR}/grafana-dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_INSTALL_PLUGINS=marcusolsson-calendar-panel
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  prometheus_data:
+  grafana_data:
