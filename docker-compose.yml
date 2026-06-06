@@ -25,6 +25,22 @@ services:
           memory: 1g
           cpus: "1.0"
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - monitoring-net
+    logging: *default-logging
+    deploy: *default-deploy
+
   prometheus:
     image: prom/prometheus:v3.4.0
     restart: unless-stopped
@@ -33,14 +49,16 @@ services:
       - '--storage.tsdb.path=/prometheus'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts:/etc/prometheus/alerts:ro
       - ${MONITORING_DATA_DIR}/prometheus-targets:/etc/prometheus/targets:ro
       - prometheus_data:/prometheus
     ports:
       - "127.0.0.1:9090:9090"
     networks:
       - monitoring-net
+    depends_on:
+      - cadvisor
     logging: *default-logging
-
     deploy: *default-deploy
 
   grafana:
@@ -61,7 +79,6 @@ services:
     networks:
       - monitoring-net
     logging: *default-logging
-
     deploy: *default-deploy
 
 volumes:
