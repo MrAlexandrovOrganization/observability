@@ -44,6 +44,20 @@ services:
           cpus: "0.5"
           memory: 512m
 
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - monitoring-net
+    logging: *default-logging
+    extends:
+      file: docker-compose.base.yml
+      service: base
+
   prometheus:
     image: prom/prometheus:v3.4.0
     restart: unless-stopped
@@ -61,6 +75,7 @@ services:
       - monitoring-net
     depends_on:
       - cadvisor
+      - alertmanager
     extends:
       file: docker-compose.base.yml
       service: base
