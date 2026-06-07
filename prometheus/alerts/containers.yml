@@ -3,10 +3,10 @@ groups:
     rules:
       - alert: ContainerMemoryHigh
         expr: |
-          (container_memory_working_set_bytes{container!=""}
-           / container_spec_memory_limit_bytes{container!=""})
+          (container_memory_working_set_bytes{name!=""}
+           / container_spec_memory_limit_bytes{name!=""})
           > 0.8
-          and container_spec_memory_limit_bytes{container!=""} > 0
+          and container_spec_memory_limit_bytes{name!=""} > 0
         for: 2m
         labels:
           severity: warning
@@ -15,10 +15,10 @@ groups:
 
       - alert: ContainerMemoryCritical
         expr: |
-          (container_memory_working_set_bytes{container!=""}
-           / container_spec_memory_limit_bytes{container!=""})
+          (container_memory_working_set_bytes{name!=""}
+           / container_spec_memory_limit_bytes{name!=""})
           > 0.9
-          and container_spec_memory_limit_bytes{container!=""} > 0
+          and container_spec_memory_limit_bytes{name!=""} > 0
         for: 1m
         labels:
           severity: critical
