@@ -18,12 +18,9 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-    deploy: &default-deploy
-      resources:
-        limits:
-          memory: 1g
-          cpus: "1.0"
+    extends:
+      file: docker-compose.base.yml
+      service: base
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
@@ -38,8 +35,14 @@ services:
       - /var/lib/docker:/var/lib/docker:ro
     networks:
       - monitoring-net
-    logging: *default-logging
-    deploy: *default-deploy
+    extends:
+      file: docker-compose.base.yml
+      service: base
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
 
   prometheus:
     image: prom/prometheus:v3.4.0
@@ -58,8 +61,13 @@ services:
       - monitoring-net
     depends_on:
       - cadvisor
-    logging: *default-logging
-    deploy: *default-deploy
+    extends:
+      file: docker-compose.base.yml
+      service: base
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
   grafana:
     image: grafana/grafana:12.0.0
@@ -78,8 +86,13 @@ services:
       - prometheus
     networks:
       - monitoring-net
-    logging: *default-logging
-    deploy: *default-deploy
+    extends:
+      file: docker-compose.base.yml
+      service: base
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
 volumes:
   prometheus_data:
