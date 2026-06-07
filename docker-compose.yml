@@ -13,11 +13,6 @@ services:
       - ./jaeger.yaml:/etc/jaeger/config.yaml:ro
     networks:
       - monitoring-net
-    logging: &default-logging
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
     extends:
       file: docker-compose.base.yml
       service: base
