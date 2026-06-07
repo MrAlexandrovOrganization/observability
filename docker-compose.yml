@@ -44,20 +44,6 @@ services:
           cpus: "0.5"
           memory: 512m
 
-  alertmanager:
-    image: prom/alertmanager:v0.28.1
-    restart: unless-stopped
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-    volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-    networks:
-      - monitoring-net
-    logging: *default-logging
-    extends:
-      file: docker-compose.base.yml
-      service: base
-
   prometheus:
     image: prom/prometheus:v3.4.0
     restart: unless-stopped
@@ -66,7 +52,6 @@ services:
       - '--storage.tsdb.path=/prometheus'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/alerts:/etc/prometheus/alerts:ro
       - ${MONITORING_DATA_DIR}/prometheus-targets:/etc/prometheus/targets:ro
       - prometheus_data:/prometheus
     ports:
@@ -75,7 +60,6 @@ services:
       - monitoring-net
     depends_on:
       - cadvisor
-      - alertmanager
     extends:
       file: docker-compose.base.yml
       service: base
