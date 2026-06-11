@@ -8,7 +8,7 @@ groups:
     rules:
       - uid: container-memory-high
         title: ContainerMemoryHigh
-        condition: B
+        condition: C
         data:
           - refId: A
             relativeTimeRange:
@@ -20,42 +20,46 @@ groups:
                 type: prometheus
                 uid: prometheus
               expr: >
-                (container_memory_working_set_bytes{name!=""}
-                / container_spec_memory_limit_bytes{name!=""})
-                and container_spec_memory_limit_bytes{name!=""} > 0
+                (container_memory_working_set_bytes{name!="",name!="transcriber-whisper-worker-1"}
+                / container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"})
+                and container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"} > 0
               instant: true
               refId: A
           - refId: B
             datasourceUid: __expr__
             model:
-              type: classic_conditions
-              conditions:
-                - evaluator:
-                    params: [0.8]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: last
-                  type: query
+              type: reduce
+              reducer: last
+              expression: A
               datasource:
                 type: __expr__
                 uid: __expr__
               refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0.8]
+                    type: gt
+              datasource:
+                type: __expr__
+                uid: __expr__
+              refId: C
         noDataState: NoData
         execErrState: Error
         for: 2m
         annotations:
-          summary: "{{ $labels.name }}: память высокая"
+          summary: 'Контейнер {{ $labels.name }}: память {{ humanizePercentage $values.B.Value }} (порог 80%)'
         labels:
           severity: warning
         isPaused: false
 
       - uid: container-memory-critical
         title: ContainerMemoryCritical
-        condition: B
+        condition: C
         data:
           - refId: A
             relativeTimeRange:
@@ -67,35 +71,39 @@ groups:
                 type: prometheus
                 uid: prometheus
               expr: >
-                (container_memory_working_set_bytes{name!=""}
-                / container_spec_memory_limit_bytes{name!=""})
-                and container_spec_memory_limit_bytes{name!=""} > 0
+                (container_memory_working_set_bytes{name!="",name!="transcriber-whisper-worker-1"}
+                / container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"})
+                and container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"} > 0
               instant: true
               refId: A
           - refId: B
             datasourceUid: __expr__
             model:
-              type: classic_conditions
-              conditions:
-                - evaluator:
-                    params: [0.9]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: last
-                  type: query
+              type: reduce
+              reducer: last
+              expression: A
               datasource:
                 type: __expr__
                 uid: __expr__
               refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0.9]
+                    type: gt
+              datasource:
+                type: __expr__
+                uid: __expr__
+              refId: C
         noDataState: NoData
         execErrState: Error
         for: 1m
         annotations:
-          summary: "{{ $labels.name }}: память критическая — риск OOM"
+          summary: 'Контейнер {{ $labels.name }}: память {{ humanizePercentage $values.B.Value }} — риск OOM'
         labels:
           severity: critical
         isPaused: false
