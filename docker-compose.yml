@@ -16,6 +16,10 @@ services:
     extends:
       file: docker-compose.base.yml
       service: base
+    deploy:
+      resources:
+        limits:
+          memory: 128m
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
@@ -75,6 +79,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_INSTALL_PLUGINS=marcusolsson-calendar-panel
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
