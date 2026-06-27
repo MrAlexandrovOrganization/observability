@@ -52,7 +52,7 @@ groups:
         execErrState: Error
         for: 2m
         annotations:
-          summary: 'Контейнер {{ $labels.name }}: память {{ humanizePercentage $values.B.Value }} (порог 80%)'
+          summary: 'Контейнер {{ or $labels.name "?" }}: память {{ with $values.B }}{{ humanizePercentage .Value }}{{ else }}нет данных{{ end }} (порог 80%)'
         labels:
           severity: warning
         isPaused: false
@@ -103,7 +103,7 @@ groups:
         execErrState: Error
         for: 1m
         annotations:
-          summary: 'Контейнер {{ $labels.name }}: память {{ humanizePercentage $values.B.Value }} — риск OOM'
+          summary: 'Контейнер {{ or $labels.name "?" }}: память {{ with $values.B }}{{ humanizePercentage .Value }}{{ else }}нет данных{{ end }} — риск OOM'
         labels:
           severity: critical
         isPaused: false
