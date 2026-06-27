@@ -1,1 +1,2 @@
 .env
+grafana/provisioning/alerting/contact_points.yml
