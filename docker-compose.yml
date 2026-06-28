@@ -19,7 +19,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128m
+          memory: 256m
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
@@ -94,7 +94,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256m
+          memory: 512m
 
 volumes:
   prometheus_data:
