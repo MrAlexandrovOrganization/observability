@@ -1,6 +1,8 @@
 networks:
   monitoring-net:
     name: monitoring-net
+    driver_opts:
+      com.docker.network.driver.mtu: "1376"
 
 services:
   jaeger:
@@ -19,7 +21,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512m
+          memory: 1.0g
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
