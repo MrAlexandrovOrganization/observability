@@ -10,7 +10,7 @@ extensions:
     backends:
       memstore:
         memory:
-          max_traces: 5000
+          max_traces: 1000
   jaeger_query:
     storage:
       traces: memstore
