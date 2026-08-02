@@ -6,7 +6,7 @@ networks:
 
 services:
   jaeger:
-    image: jaegertracing/jaeger:2.4.0
+    image: jaegertracing/jaeger:2.20.0
     restart: unless-stopped
     command: ["--config=/etc/jaeger/config.yaml"]
     ports:
