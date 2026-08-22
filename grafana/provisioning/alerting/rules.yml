@@ -107,3 +107,52 @@ groups:
         labels:
           severity: critical
         isPaused: false
+
+      - uid: container-oom
+        title: ContainerOOMKilled
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              expr: >
+                increase(container_memory_failcnt{name!="",name!="transcriber-whisper-worker-1"}[5m]) > 0
+              instant: true
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              reducer: last
+              expression: A
+              datasource:
+                type: __expr__
+                uid: __expr__
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              datasource:
+                type: __expr__
+                uid: __expr__
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: 'Контейнер {{ or $labels.name "?" }}: OOM-kill (память превысила лимит)'
+        labels:
+          severity: critical
+        isPaused: false
