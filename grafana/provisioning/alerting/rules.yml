@@ -150,7 +150,7 @@ groups:
               refId: C
         noDataState: NoData
         execErrState: Error
-        for: 0m
+        for: 1m
         annotations:
           summary: 'Контейнер {{ or $labels.name "?" }}: OOM-kill (память превысила лимит)'
         labels:
