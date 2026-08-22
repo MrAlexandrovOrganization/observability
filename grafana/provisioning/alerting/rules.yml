@@ -122,7 +122,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               expr: >
-                increase(container_memory_failcnt{name!="",name!="transcriber-whisper-worker-1"}[5m]) > 0
+                increase(container_oom_events_total{name!="",name!="transcriber-whisper-worker-1"}[5m]) > 0
               instant: true
               refId: A
           - refId: B
