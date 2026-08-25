@@ -7,9 +7,45 @@ on:
     branches: [main]
 
 jobs:
+  validate:
+    name: Validate log stack configs
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose
+        run: |
+          # Dummy values: compose config only needs the variables to be set,
+          # real values live in .env on the VM.
+          export MONITORING_DATA_DIR=/tmp/monitoring
+          export GRAFANA_PASSWORD=dummy
+          export TELEGRAM_BOT_TOKEN=dummy
+          export TELEGRAM_CHAT_ID=dummy
+          docker compose config -q
+
+      - name: Validate Loki config
+        run: |
+          docker run --rm \
+            -v "$PWD/loki.yaml:/etc/loki/local-config.yaml:ro" \
+            grafana/loki:3.4.2 \
+            -config.file=/etc/loki/local-config.yaml -verify-config
+
+      - name: Validate Alloy config
+        run: |
+          # `alloy fmt` parses the file, so it doubles as a syntax check;
+          # diff enforces canonical formatting.
+          docker run --rm \
+            -v "$PWD/alloy/config.alloy:/work/config.alloy:ro" \
+            grafana/alloy:v1.7.1 \
+            fmt /work/config.alloy > /tmp/config.formatted.alloy
+          diff -u alloy/config.alloy /tmp/config.formatted.alloy
+
   deploy:
     name: Deploy to VM
     runs-on: ubuntu-24.04
+    needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -23,3 +59,45 @@ jobs:
             cd ${{ secrets.VM_PROJECT_PATH }}
             git pull
             make up
+
+      - name: Smoke test Loki
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            for i in $(seq 1 12); do
+              if curl -fsS http://127.0.0.1:3100/ready | grep -q ready; then
+                echo "Loki is ready"
+                exit 0
+              fi
+              echo "waiting for Loki ($i/12)..."
+              sleep 5
+            done
+            echo "Loki did not become ready"
+            exit 1
+
+      - name: Smoke test Alloy and ingestion
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            if [ "$(docker ps --filter 'name=alloy' --filter 'status=running' -q)" = "" ]; then
+              echo "Alloy container is not running"
+              exit 1
+            fi
+            echo "Alloy is running"
+            # Give Alloy time to push the first batches, then check that logs
+            # actually arrive in Loki.
+            sleep 15
+            RESPONSE=$(curl -fsS -G http://127.0.0.1:3100/loki/api/v1/query \
+              --data-urlencode 'query={job="docker"}')
+            if echo "$RESPONSE" | grep -q '"result":\[\]'; then
+              echo "No logs ingested into Loki — check Alloy on the VM:"
+              echo "  docker logs \$(docker ps -qf name=alloy)"
+              exit 1
+            fi
+            echo "Loki is ingesting docker logs"
